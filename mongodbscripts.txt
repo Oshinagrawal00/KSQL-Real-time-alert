@@ -1,0 +1,30 @@
+{"_id":{"$oid":"60c03d48883dc46b3c17b7bc"},"AppID":{"$numberInt":"1"},"key":"Setup Stock","value":{"$jsonSchema":{"sourceFields":["ITEMNO","QTYONHAND"],"condition":"QTYONHAND<1"}},"description":"Display alert on Stock deficiency","CreatedOn":{"$date":{"$numberLong":"1630866600000"}},"CreatedBy":"System","ModifiedOn":{"$date":{"$numberLong":"1630866600000"}},"ModifiedBy":"System"}
+
+mongodb+srv://oshinagra:<password>@cluster1.nhuuf.mongodb.net/myFirstDatabase?retryWrites=true&w=majority
+
+{ 
+    "$jsonSchema" : {
+        "bsonType" : "object", 
+        "required" : [
+            "acceptedNameUsagelD", 
+            "bibliographicCitation", 
+            "class", 
+            "kingdom", 
+            "modified", 
+            "order", 
+            "phylum", 
+            "scientificName", 
+            "scientificNameID", 
+            "taxonID", 
+            "taxonRank", 
+            "taxonomicStatus"
+        ]
+    }
+}
+
+///streaming msgs to multiple topics
+KStream stream = ...
+
+stream.filter(new MyPredicate1()).to("output-topic-1");
+stream.filter(new MyPredicate2()).to("output-topic-2");
+stream.filter(new MyPredicate3()).to("output-topic-3");

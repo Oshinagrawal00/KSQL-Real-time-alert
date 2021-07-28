@@ -1,0 +1,268 @@
+using MongoDB.Driver;
+using MongoDB.Bson;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Text.Json;
+using System.Net.Http;
+
+//using Newtonsoft.Json;
+
+
+
+namespace ConsoleApp1
+{
+    
+    class Program
+    {
+        public static async void GetResponseString(string text)
+        {
+            var httpClient = new HttpClient();
+
+            var parameters = new Dictionary<string, string>();
+            parameters["ksql"] = text;
+
+            var js = JsonSerializer.Serialize(parameters);
+            var data2 = new StringContent(js, Encoding.UTF8, "application/json");
+            Uri BaseUri = new Uri("http://localhost:8088/ksql");
+            Console.WriteLine("^^^^^^^");
+            var response = await httpClient.PostAsync(BaseUri, data2);
+            var contents = await response.Content.ReadAsStringAsync();
+            Console.WriteLine(response);
+            Console.WriteLine("$$$$$$$$$$$$$$");
+            Console.WriteLine(contents);
+            Console.WriteLine("()()()");
+
+        }
+        public static async void GetResponseString2(string text)
+        {
+            var httpClient = new HttpClient();
+
+            var parameters = new Dictionary<string, string>();
+            parameters["ksql"] = text;
+
+            var js = JsonSerializer.Serialize(parameters);
+            var data2 = new StringContent(js, Encoding.UTF8, "application/json");
+            Uri BaseUri = new Uri("http://localhost:8088/query");
+            Console.WriteLine("^^^^^^^");
+            var response = await httpClient.PostAsync(BaseUri, data2);
+            var contents = await response.Content.ReadAsStringAsync();
+
+            Console.WriteLine("$$$$$$$$$$$$$$");
+            Console.Write(response);
+            Console.WriteLine("/////////////////");
+
+            Console.WriteLine(contents);
+            Console.WriteLine(contents.GetType());
+            //Console.WriteLine(contents.ToBsonDocument());
+            Console.WriteLine("()()()");
+
+        }
+        int cnt = 0;
+
+        void Func1(BsonDocument k)
+        {
+            //Console.WriteLine(k.GetValue("description"));
+            
+            var quer = "SELECT";          
+            
+            var strname = k.GetValue("streamName");
+            
+            //Console.WriteLine(k.GetValue("value").GetType());
+            BsonDocument j = k.GetValue("value").AsBsonDocument;
+            
+            foreach (var l in j)
+            {
+                //Console.WriteLine(l);
+                if (l.Name == "condition")
+                {
+                    //Console.WriteLine(l.Value);
+                    //var qty = l.Value;
+                    quer = quer + " FROM "+strname +" WHERE ";
+                    
+                    var doc = l.Value.AsBsonDocument;
+                    foreach(var x in doc)
+                    {
+                        
+                        quer = quer + x.Value + " AND";
+
+                    }
+                    quer = quer.TrimEnd('D');
+                    quer = quer.TrimEnd('N');
+                    quer = quer.TrimEnd('A');
+
+                }
+                if (l.Name == "SourceFields")
+                {
+                    //Console.WriteLine(l.Value);
+                    var src = l.Value.AsBsonDocument;
+                    foreach (var typ in src)
+                    {
+               //         Console.WriteLine(typ.Value);
+                        quer = quer +" "+ typ.Value+",";
+                        
+                    }
+                    quer = quer.TrimEnd(',');
+                    
+                }
+            }
+            quer = quer + " EMIT CHANGES LIMIT 5;";
+            
+            Console.WriteLine(quer);
+            /*
+            if(cnt==0)
+                GetResponseString2(quer);
+            cnt++;*/
+        }   
+        void Func2(BsonDocument k)
+        {
+            //Console.WriteLine(k.GetValue("value"));
+            var quer = "SELECT";
+            
+            var join_str = k.GetValue("streamName");
+            var join_on = k.GetValue("joinOn");
+            
+            
+            //Console.WriteLine(k.GetValue("value").GetType());
+            
+            BsonDocument j = k.GetValue("value").AsBsonDocument;
+
+            foreach (var l in j)
+            {
+                //Console.WriteLine(l);
+                if (l.Name == "condition")
+                {
+                    //Console.WriteLine(l.Value);
+                    //var qty = l.Value;
+                    quer = quer + " FROM " + join_str + " WITHIN 7 DAYS ON "+join_on+" WHERE";
+                    
+
+                    var doc = l.Value.AsBsonDocument;
+                    foreach (var x in doc)
+                    {
+                        quer = quer +" "+ x.Value + " AND";
+
+
+                    }
+                    quer = quer.TrimEnd('D');
+                    
+                    quer = quer.TrimEnd('N');
+                    
+                    quer = quer.TrimEnd('A');
+                    
+                }
+                if (l.Name == "SourceFields")
+                {
+                    //Console.WriteLine(l.Value);
+                    var src = l.Value.AsBsonDocument;
+                    foreach (var typ in src)
+                    {
+                        //         Console.WriteLine(typ.Value);
+                        quer = quer + " " + typ.Value + ",";
+                        
+                    }
+                    quer = quer.TrimEnd(',');
+                    
+                    
+                }
+            }
+            quer = quer + " EMIT CHANGES LIMIT 5;";
+            
+            Console.WriteLine(quer);
+            /*
+            if (cnt == 0)
+                GetResponseString2(quer);
+            cnt++;
+            */
+
+
+        }
+        static void Main(string[] args)
+        {
+
+
+                
+
+                
+                var client = new MongoClient("mongodb+srv://oshinagra:aryan123@cluster1.nhuuf.mongodb.net/myFirstDatabase?retryWrites=true&w=majority");
+                var db = client.GetDatabase("example");
+                var collection = db.GetCollection<BsonDocument>("sampletable");
+                var documents = collection.Find(new BsonDocument()).ToList();
+
+
+                //var f = collection.Find(new BsonDocument()).SortByDescending(m => m["BPC"]).ToList();
+                //var result = collection.Find("{BPC:1}").FirstOrDefault();
+                //var result = collection.Find("{BPC:1}").SortBy(m=>m["value"]).ToList();
+                //string quer = "SELECT ";
+
+                
+            
+                Console.WriteLine("************%%%%%%%%%%%%%**************");
+                Console.WriteLine("************%%%%%%%%%%%%%**************");
+                //quer = quer + ";";
+                //Console.WriteLine(quer);
+                //Console.WriteLine(documents.GetType());
+                Program p = new Program();
+                //Console.WriteLine("************");
+                foreach (var k in documents)
+                {
+                
+                if (k.GetValue("type") == "single")
+                {
+                    p.Func1(k);
+                    Console.WriteLine("@@@@@@@@@@@@@");
+
+                }
+                else
+                {
+                    p.Func2(k);
+                    Console.WriteLine("@@@@@@@@@@@@@");
+                }
+                }
+                //Console.Write(documents);
+
+                Console.WriteLine("************%%%%%%%%%%%%%**************");
+                Console.WriteLine("************%%%%%%%%%%%%%**************");
+            
+            bool isPrime = true;
+            for (int i = 2; i <= 50000; i++)
+            {
+                for (int j = 2; j <= 50000; j++)
+                {
+
+                    if (i != j && i % j == 0)
+                    {
+                        isPrime = false;
+                        break;
+                    }
+
+                }
+                if (isPrime)
+                {
+                    Console.Write("\t *");
+                }
+                isPrime = true;
+            }
+            
+
+        }
+
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+CREATE OR REPLACE STREAM STREAMA2 WITH (KAFKA_TOPIC='TOPICA', VALUE_FORMAT='JSON') AS SELECT ITEMNO, PLANT, SLOC, SBIN, QTY FROM STREAMA;
+
+SELECT ITEMNO, PLANT, QTY FROM STREAMA2 WHERE QTY>50  EMIT CHANGES LIMIT 5;
+@@@@@@@@@@@@@
+
+SELECT ITEMNO, PLANT, SLOC, SBIN, QTY FROM STREAMA2 WHERE QTY>100  EMIT CHANGES LIMIT 5;
+@@@@@@@@@@@@@
+
+SELECT A.ITEMNO AS ITEMNO, A.PLANT AS PLANT, A.QTY AS QTY, B.MOVAVGPR AS MOVAVGPR FROM STREAMA2 A JOIN STREAMB2 B WITHIN 7 DAYS ON A.ITEMNO=B.ITEMNO WHERE A.QTY>50  EMIT CHANGES LIMIT 5;
+@@@@@@@@@@@@@
+
+SELECT A.ITEMNO AS ITEMNO, A.PLANT AS PLANT, A.SLOC AS SLOC, A.SBIN AS SBIN, A.QTY AS QTY, B.MOVAVGPR AS MOVAVGPR FROM STREAMA2 A JOIN STREAMB2 B WITHIN 7 DAYS ON A.ITEMNO=B.ITEMNO WHERE A.QTY>100 AND B.MOVAVGPR>0  EMIT CHANGES LIMIT 5;
+@@@@@@@@@@@@@
